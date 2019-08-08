@@ -1,12 +1,20 @@
 #!/usr/bin/env python3
 
 import re
+import sys
 import subprocess
-import argparse
 from termcolor import colored
 
-LAYER_SIZE_THR_YELLOW = 50 * 10**6  # 50 MB
-LAYER_SIZE_THR_RED = 200 * 10**6    # 200 MB
+LAYER_SIZE_THR_YELLOW = 50 * 1024**2  # 50 MB
+LAYER_SIZE_THR_RED = 200 * 1024**2    # 200 MB
+
+def about():
+    print()
+    print('='*30)
+    print(colored('Docker Build Analyzer', 'white', 'on_blue'))
+    print('Maintainer: Andrea F. Daniele (afdaniele@ttic.edu)')
+    print('='*30)
+    print()
 
 def run(x):
     return subprocess.check_output(x).decode('utf-8')
@@ -19,24 +27,21 @@ def sizeof_fmt(num, suffix='B'):
     return "%.1f%s%s" % (num, 'Yi', suffix)
 
 def main():
-    # define arguments
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--logfile', required=True, help="Docker build log file to process")
-    parser.add_argument('--image', required=True, help='Docker image name associated with the log')
-    parsed = parser.parse_args()
-
-    # get arguments
-    logfile = parsed.logfile
-    image = parsed.image
-
-    # put lines from the logfile in a list
-    lines = []
-    with open(logfile) as fin:
-        lines = [l for l in fin]
+    # put lines from the pipe in a list
+    lines = [l for l in sys.stdin if len(l.strip()) > 0]
 
     # define RegEx patterns
     step_pattern = re.compile("Step ([0-9]+)/([0-9]+) : (.*)")
-    open_layer = re.compile(" ---> ([0-9a-z]{12})")
+    layer_pattern = re.compile(" ---> ([0-9a-z]{12})")
+    final_layer_pattern = re.compile("Successfully tagged (.*)")
+
+    # check if the build process succeded
+    if not final_layer_pattern.match(lines[-1]):
+        exit(1)
+    image = final_layer_pattern.match(lines[-1]).group(1)
+
+    print()
+    about()
 
     # find "Step XY/TOT" lines
     steps_idx = [i for i in range(len(lines)) if step_pattern.match(lines[i])] + [len(lines)]
@@ -58,7 +63,7 @@ def main():
     last_layer = None
     for i,j in zip(steps_idx, steps_idx[1:]):
         cur_step_lines = lines[i:j]
-        open_layers = [open_layer.match(l) for l in cur_step_lines if open_layer.match(l)]
+        open_layers = [layer_pattern.match(l) for l in cur_step_lines if layer_pattern.match(l)]
         # get Step info
         print('-' * 22)
         stepline = lines[i]
@@ -98,6 +103,12 @@ def main():
 
     # print info about the whole image
     print()
+    print('Legend: %s < %s\t%s < %s\t%s > %s\t' % (
+        colored(' '*2, 'white', 'on_green'), sizeof_fmt(LAYER_SIZE_THR_YELLOW),
+        colored(' '*2, 'white', 'on_yellow'), sizeof_fmt(LAYER_SIZE_THR_RED),
+        colored(' '*2, 'white', 'on_red'), sizeof_fmt(LAYER_SIZE_THR_RED)
+    ))
+    print()
     print('=' * 22)
     print('Final image name: %s' % image)
     print('Final image size: %s' % sizeof_fmt(final_image_size))
@@ -105,8 +116,7 @@ def main():
     print('Your image added %s to the base image.' % sizeof_fmt(final_image_size-base_image_size))
     print('=' * 22)
     print()
-    print('Always ask yourself, can I do better than that? ;)')
-    print('Done!')
+    print(colored('IMPORTANT', 'white', 'on_blue') + ': Always ask yourself, can I do better than that? ;)')
     print()
 
 

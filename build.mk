@@ -4,31 +4,31 @@ default_arch=arm32v7
 arch=$(default_arch)
 
 root_dir:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
-branch=$(shell git rev-parse --abbrev-ref HEAD)
+code_dir:=$(root_dir)/../
+
+branch=$(shell git -C "$(code_dir)" rev-parse --abbrev-ref HEAD)
 
 # name of the repo
-repo=$(shell basename -s .git `git config --get remote.origin.url`)
+repo=$(shell basename -s .git `git -C "$(code_dir)" config --get remote.origin.url`)
 
 default_tag=duckietown/$(repo):$(branch)
 tag=duckietown/$(repo):$(branch)-$(arch)
 
-logfile=/tmp/docker-build-$(repo)-$(branch)-$(arch).log
-
-labels=$(shell ./labels.py)
+labels=$(shell $(root_dir)/labels.py "$(code_dir)")
 
 _build: no_cache=0
 _build-no-cache: no_cache=1
 
 _build _build-no-cache:
-	@docker build \
+	docker build \
 		--pull \
 		$(labels) \
 		-t $(tag) \
 		--build-arg ARCH=$(arch) \
 		--no-cache=$(no_cache) \
-		. \
+		"$(code_dir)" \
 	| tee /dev/tty \
-	> $(logfile)
+	| python3 $(root_dir)/image_analysis.py --image "$(tag)"
 
 	@if [ "$(arch)" = "$(default_arch)" ]; then \
 		echo "Tagging image $(tag) as $(default_tag)."; \
@@ -39,9 +39,6 @@ _build _build-no-cache:
 		docker tag $(tag) $(default_tag)-no-arm; \
 		echo "Done!"; \
 	fi
-
-	@python3 $(root_dir)/image_analysis.py --logfile "$(logfile)" --image "$(tag)"
-	@rm "$(logfile)"
 
 _push:
 	docker push $(tag)
