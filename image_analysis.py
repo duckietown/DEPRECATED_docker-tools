@@ -77,7 +77,7 @@ def main():
             layersize = sizeof_fmt(layer_to_size_bytes[layerid])
             color = 'yellow' if layer_to_size_bytes[layerid] > LAYER_SIZE_THR_YELLOW else 'green'
             color = 'red' if layer_to_size_bytes[layerid] > LAYER_SIZE_THR_RED else color
-            layersize = colored(layersize, color, attrs=['reverse'])
+            layersize = colored(layersize, 'white', 'on_'+color)
         # print info about the current layer
         print(
             'Layer ID: %s\n  Step: %s/%s\n  Command: \n\t%s\n  Size: %s' % (

@@ -3,6 +3,7 @@
 default_arch=arm32v7
 arch=$(default_arch)
 
+root_dir:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 branch=$(shell git rev-parse --abbrev-ref HEAD)
 
 # name of the repo
@@ -39,7 +40,7 @@ _build _build-no-cache:
 		echo "Done!"; \
 	fi
 
-	@python3 ./image-builder/image_analysis.py --logfile "$(logfile)" --image "$(tag)"
+	@python3 $(root_dir)/image_analysis.py --logfile "$(logfile)" --image "$(tag)"
 	@rm "$(logfile)"
 
 _push:
