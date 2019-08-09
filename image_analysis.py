@@ -62,6 +62,9 @@ def main():
     first_layer = None
     last_layer = None
     for i,j in zip(steps_idx, steps_idx[1:]):
+        indent_str = '|'
+        layerid_str = 'Layer ID:'
+        size_str = 'Size:'
         cur_step_lines = lines[i:j]
         open_layers = [layer_pattern.match(l) for l in cur_step_lines if layer_pattern.match(l)]
         # get Step info
@@ -82,15 +85,16 @@ def main():
             layersize = sizeof_fmt(layer_to_size_bytes[layerid])
             color = 'yellow' if layer_to_size_bytes[layerid] > LAYER_SIZE_THR_YELLOW else 'green'
             color = 'red' if layer_to_size_bytes[layerid] > LAYER_SIZE_THR_RED else color
-            layersize = colored(layersize, 'white', 'on_'+color)
+            indent_str = colored(indent_str, 'white', 'on_'+color)
+            size_str = colored(size_str, 'white', 'on_'+color)
+            layerid_str = colored(layerid_str, 'white', 'on_'+color)
         # print info about the current layer
         print(
-            'Layer ID: %s\n  Step: %s/%s\n  Command: \n\t%s\n  Size: %s' % (
-            layerid,
-            stepno,
-            steptot,
-            stepcmd,
-            layersize
+            '%s %s\n%sStep: %s/%s\n%sCommand: \n%s\t%s\n%s%s %s' % (
+            layerid_str, layerid,
+            indent_str, stepno, steptot,
+            indent_str, indent_str, stepcmd,
+            indent_str, size_str, layersize
         ))
         print()
 
