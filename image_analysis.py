@@ -2,6 +2,7 @@
 
 import re
 import sys
+import argparse
 import subprocess
 from termcolor import colored
 
@@ -27,8 +28,17 @@ def sizeof_fmt(num, suffix='B'):
     return "%.1f%s%s" % (num, 'Yi', suffix)
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--machine', default="", help="Hostname of the machine running the build")
+    parsed = parser.parse_args()
+
     # put lines from the pipe in a list
     lines = [l for l in sys.stdin if len(l.strip()) > 0]
+
+    # handle remote build
+    docker_H = []
+    if len(parsed.machine) > 0:
+        docker_H = ['-H', parsed.machine]
 
     # return if the log is empty
     if not lines:
@@ -51,7 +61,7 @@ def main():
     steps_idx = [i for i in range(len(lines)) if step_pattern.match(lines[i])] + [len(lines)]
 
     # get layers size from docker
-    image_history = run(['docker', 'history', '-H=false', '--format', '{{.ID}}:{{.Size}}', image])
+    image_history = run(['docker'] + docker_H + ['history', '-H=false', '--format', '{{.ID}}:{{.Size}}', image])
     image_history = [l.split(':') for l in image_history.split('\n') if len(l.strip()) > 0]
 
     # create map {layerid: size_bytes}
@@ -80,18 +90,24 @@ def main():
         # get info about layer ID and size
         layerid = None
         layersize = 'ND'
+        bg_color = 'white'
+        fg_color = 'grey'
         if len(open_layers) > 0:
             layerid = open_layers[0].group(1)
             if first_layer is None:
                 first_layer = layerid
             last_layer = layerid
+        # ---
         if layerid in layer_to_size_bytes:
             layersize = sizeof_fmt(layer_to_size_bytes[layerid])
-            color = 'yellow' if layer_to_size_bytes[layerid] > LAYER_SIZE_THR_YELLOW else 'green'
-            color = 'red' if layer_to_size_bytes[layerid] > LAYER_SIZE_THR_RED else color
-            indent_str = colored(indent_str, 'white', 'on_'+color)
-            size_str = colored(size_str, 'white', 'on_'+color)
-            layerid_str = colored(layerid_str, 'white', 'on_'+color)
+            fg_color = 'white'
+            bg_color = 'yellow' if layer_to_size_bytes[layerid] > LAYER_SIZE_THR_YELLOW else 'green'
+            bg_color = 'red' if layer_to_size_bytes[layerid] > LAYER_SIZE_THR_RED else bg_color
+            bg_color = 'blue' if stepcmd.startswith('FROM') else bg_color
+
+        indent_str = colored(indent_str, fg_color, 'on_'+bg_color)
+        size_str = colored(size_str, fg_color, 'on_'+bg_color)
+        layerid_str = colored(layerid_str, fg_color, 'on_'+bg_color)
         # print info about the current layer
         print(
             '%s %s\n%sStep: %s/%s\n%sCommand: \n%s\t%s\n%s%s %s' % (
@@ -111,7 +127,9 @@ def main():
 
     # print info about the whole image
     print()
-    print('Legend: %s < %s\t%s < %s\t%s > %s\t' % (
+    print('Legend: %s %s\t%s %s\t%s < %s\t%s < %s\t%s > %s\t' % (
+        colored(' '*2, 'white', 'on_white'), 'EMPTY LAYER',
+        colored(' '*2, 'white', 'on_blue'), 'BASE SIZE',
         colored(' '*2, 'white', 'on_green'), sizeof_fmt(LAYER_SIZE_THR_YELLOW),
         colored(' '*2, 'white', 'on_yellow'), sizeof_fmt(LAYER_SIZE_THR_RED),
         colored(' '*2, 'white', 'on_red'), sizeof_fmt(LAYER_SIZE_THR_RED)
