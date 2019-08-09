@@ -2,6 +2,8 @@
 
 default_arch=arm32v7
 arch=$(default_arch)
+default_machine=localhost
+machine=$(default_machine)
 
 root_dir:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 code_dir:=$(root_dir)/../
@@ -20,13 +22,15 @@ _build: no_cache=0
 _build-no-cache: no_cache=1
 
 _build _build-no-cache:
-	docker build \
-		--pull \
-		$(labels) \
-		-t $(tag) \
-		--build-arg ARCH=$(arch) \
-		--no-cache=$(no_cache) \
-		"$(code_dir)" \
+	docker \
+		-H $(machine) \
+		build \
+			--pull \
+			$(labels) \
+			-t $(tag) \
+			--build-arg ARCH=$(arch) \
+			--no-cache=$(no_cache) \
+			"$(code_dir)" \
 	| tee /dev/tty \
 	| python3 $(root_dir)/image_analysis.py --image "$(tag)"
 
