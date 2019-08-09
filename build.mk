@@ -4,6 +4,7 @@ default_arch=arm32v7
 arch=$(default_arch)
 default_machine=unix:///var/run/docker.sock
 machine=$(default_machine)
+pull=0
 
 root_dir:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 code_dir:=$(root_dir)/../
@@ -25,7 +26,7 @@ _build _build-no-cache:
 	docker \
 		-H=$(machine) \
 		build \
-			--pull \
+			--pull=$(pull) \
 			$(labels) \
 			-t $(tag) \
 			--build-arg ARCH=$(arch) \
