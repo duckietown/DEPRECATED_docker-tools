@@ -2,7 +2,7 @@
 
 default_arch=arm32v7
 arch=$(default_arch)
-default_machine=localhost
+default_machine=unix:///var/run/docker.sock
 machine=$(default_machine)
 
 root_dir:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
@@ -23,7 +23,7 @@ _build-no-cache: no_cache=1
 
 _build _build-no-cache:
 	docker \
-		-H $(machine) \
+		-H=$(machine) \
 		build \
 			--pull \
 			$(labels) \
@@ -32,7 +32,7 @@ _build _build-no-cache:
 			--no-cache=$(no_cache) \
 			"$(code_dir)" \
 	| tee /dev/tty \
-	| python3 $(root_dir)/image_analysis.py --image "$(tag)"
+	| python3 $(root_dir)/image_analysis.py --machine "$(machine)"
 
 	@if [ "$(arch)" = "$(default_arch)" ]; then \
 		echo "Tagging image $(tag) as $(default_tag)."; \
