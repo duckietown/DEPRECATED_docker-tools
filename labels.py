@@ -37,7 +37,7 @@ def go():
     # add_label('git_sha', headsha)
     # add_label('build_timestamp', datetime.datetime.now().isoformat())
 
-    d = os.path.basename(os.path.realpath(os.getcwd()))
+    d = os.path.basename(os.path.realpath(rootdir))
     prefix = 'duckietown/dt18/%s/' % d
     args = []
     for k, v in labels.items():
