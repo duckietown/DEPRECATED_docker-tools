@@ -25,8 +25,8 @@ def go():
     _ = run(['git', '-C', rootdir, 'status', '--porcelain'])
     nadded = len(_.strip().split('\n'))
     headsha = run(['git', '-C', rootdir, 'rev-parse', 'HEAD']).strip().split('\n')[0]
-    add_label('nmodified', nmodified)
-    add_label('nadded', nadded)
+    # add_label('nmodified', nmodified)
+    # add_label('nadded', nadded)
     add_label('user', getpass.getuser())
     add_label('platform_machine', platform.machine())
     add_label('platform_node', platform.node())
@@ -34,8 +34,8 @@ def go():
     add_label('platform_system', platform.system())
     # add_label('platform_version', platform.version())
     # add_label('platform_processor', platform.processor())
-    add_label('git_sha', headsha)
-    add_label('build_timestamp', datetime.datetime.now().isoformat())
+    # add_label('git_sha', headsha)
+    # add_label('build_timestamp', datetime.datetime.now().isoformat())
 
     d = os.path.basename(os.path.realpath(os.getcwd()))
     prefix = 'duckietown/dt18/%s/' % d
