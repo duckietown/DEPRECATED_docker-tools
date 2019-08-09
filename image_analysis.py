@@ -30,6 +30,10 @@ def main():
     # put lines from the pipe in a list
     lines = [l for l in sys.stdin if len(l.strip()) > 0]
 
+    # return if the log is empty
+    if not lines:
+        exit(1)
+
     # define RegEx patterns
     step_pattern = re.compile("Step ([0-9]+)/([0-9]+) : (.*)")
     layer_pattern = re.compile(" ---> ([0-9a-z]{12})")
@@ -37,7 +41,7 @@ def main():
 
     # check if the build process succeded
     if not final_layer_pattern.match(lines[-1]):
-        exit(1)
+        exit(2)
     image = final_layer_pattern.match(lines[-1]).group(1)
 
     print()
