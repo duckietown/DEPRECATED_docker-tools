@@ -5,6 +5,7 @@ arch=$(default_arch)
 default_machine=unix:///var/run/docker.sock
 machine=$(default_machine)
 pull=0
+nocache=0
 
 root_dir:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 code_dir:=$(root_dir)/../
@@ -19,10 +20,7 @@ tag=duckietown/$(repo):$(branch)-$(arch)
 
 labels=$(shell $(root_dir)/labels.py "$(code_dir)")
 
-_build: no_cache=0
-_build-no-cache: no_cache=1
-
-_build _build-no-cache:
+_build:
 	docker \
 		-H=$(machine) \
 		build \
@@ -30,7 +28,7 @@ _build _build-no-cache:
 			$(labels) \
 			-t $(tag) \
 			--build-arg ARCH=$(arch) \
-			--no-cache=$(no_cache) \
+			--no-cache=$(nocache) \
 			"$(code_dir)" \
 	| tee /dev/tty \
 	| python3 $(root_dir)/image_analysis.py --machine "$(machine)"
