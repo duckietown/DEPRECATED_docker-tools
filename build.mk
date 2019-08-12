@@ -3,24 +3,46 @@
 default_arch=arm32v7
 arch=$(default_arch)
 default_machine=unix:///var/run/docker.sock
+arm_binfmt=/proc/sys/fs/binfmt_misc/qemu-arm
 machine=$(default_machine)
 pull=0
 nocache=0
 
+# root dir and code dir
 root_dir:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 code_dir:=$(root_dir)/../
 
+# name of the branch
 branch=$(shell git -C "$(code_dir)" rev-parse --abbrev-ref HEAD)
 
 # name of the repo
 repo=$(shell basename -s .git `git -C "$(code_dir)" config --get remote.origin.url`)
 
+# docker image tags
 default_tag=duckietown/$(repo):$(branch)
 tag=duckietown/$(repo):$(branch)-$(arch)
 
+# get labels for the image
 labels=$(shell $(root_dir)/labels.py "$(code_dir)")
 
-_build:
+_env_check:
+	@# check if binfmt was registered for the target architecture
+	@if [ "$(arch)" = "$(default_arch)" ]; then \
+		if [ ! -f "$(arm_binfmt)" ]; then \
+			echo "The module 'binfmt_misc' does not happear to be registered with your kernel."; \
+			echo "Registering..."; \
+			docker run --rm --privileged multiarch/qemu-user-static:register --reset; \
+			echo "Done!"; \
+		else \
+			if [ ! `head -1 $(arm_binfmt)` = "enabled" ]; then \
+				echo "The module 'binfmt_misc' for \"arm\" architecture is not enabled. Please, enable it first."; \
+				echo "Exiting..."; \
+				exit 1; \
+			fi \
+		fi \
+	fi
+
+_build: _env_check
 	docker \
 		-H=$(machine) \
 		build \
