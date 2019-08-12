@@ -1,4 +1,4 @@
-# DO NOT MODIFY - it is auto written from duckietown-env-developer
+# DO NOT MODIFY - contact Andrea F. Daniele (afdaniele@ttic.edu) if you need to
 
 default_arch=arm32v7
 arch=$(default_arch)
