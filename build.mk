@@ -29,7 +29,7 @@ _env_check:
 	@# check if binfmt was registered for the target architecture
 	@if [ "$(arch)" = "$(default_arch)" ]; then \
 		if [ ! -f "$(arm_binfmt)" ]; then \
-			echo "The module 'binfmt_misc' does not happear to be registered with your kernel."; \
+			echo "The module 'binfmt_misc' does not appear to be registered with your kernel."; \
 			echo "Registering..."; \
 			docker run --rm --privileged multiarch/qemu-user-static:register --reset; \
 			echo "Done!"; \
